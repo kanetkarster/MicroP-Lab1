@@ -175,16 +175,21 @@ __Vectors_Size  EQU  __Vectors_End - __Vectors
 
 ; Reset handler
 Reset_Handler    PROC
-                 EXPORT  Reset_Handler             [WEAK]
-        IMPORT  SystemInit
-        IMPORT  __main
-
-				 LDR     R0, =SystemInit
-                 BLX     R0
-                 LDR     R0, =__main
-                 BX      R0
-                 ENDP
-
+                 EXPORT  Reset_Handler            [WEAK]
+		IMPORT __main
+		IMPORT ViterbiUpdate_asm
+		; Enable FPU
+		LDR.W R0, =0xE000ED88
+		LDR R1, [R0]
+		ORR R1, R1, #(0xf << 20)
+		STR R1, [R0]
+		DSB
+		ISB
+		
+		; Call Function
+		LDR	R0, =__main
+		BX	R0
+		ENDP
 ; Dummy Exception Handlers (infinite loops which can be modified)
 
 NMI_Handler     PROC
