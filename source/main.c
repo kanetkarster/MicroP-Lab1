@@ -12,10 +12,14 @@ typedef struct {
 } HMM;
 
 // Assembly Functions
-extern int ViterbiUpdate_asm(HMM *model);
+extern int ViterbiUpdate_asm(float **vitpsi, HMM *model);
 
 int main()
 {	
+	int S = 4, V = 10;
+	float vitpsi[2][S];
+	
+	
 	HMM model;
 	model.S = 3;
 	model.V = 12;
