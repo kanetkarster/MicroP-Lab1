@@ -12,17 +12,17 @@ typedef struct {
 } HMM;
 
 // Assembly Functions
-extern int ViterbiUpdate_asm(float **vitpsi, HMM *model);
+extern int ViterbiUpdate_asm(HMM *model);
 
 int main()
 {	
 	int S = 4, V = 10;
-	float vitpsi[2][S];
+	//float vitpsi[2][S];
 	
 	
 	HMM model;
-	model.S = 3;
-	model.V = 12;
+	model.S = S;
+	model.V = V;
 	model.transition = malloc(model.S * model.S * sizeof(float));
 	model.emission = malloc(model.S * model.V * sizeof(float));
 	model.prior = malloc(model.S * sizeof(float));
