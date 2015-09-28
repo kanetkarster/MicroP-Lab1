@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "arm_math.h"
 
+#define N_STATES 2
+#define N_OBS 1
 // typedefs
 typedef struct {
 	int S;
@@ -16,32 +18,37 @@ extern int ViterbiUpdate_asm(float* viterbi_in, float* viterbi_out, float obs, H
 int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, HMM *model);
 int main()
 {	
-	int S = 4, V = 10;
 	// VITPSI
-	float* vitpsi_i = malloc(2*S*sizeof(float));
-	float* vitpsi_o = malloc(2*S*sizeof(float));
+	float* vitpsi_i = malloc(2*N_STATES*sizeof(float));
+	float* vitpsi_o = malloc(2*N_STATES*sizeof(float));
 	
+	float EMMISSION[N_STATES][N_OBS]= {1.0f, 2.0f};
+	float TRANSMISSION[N_STATES][N_STATES]= {{1.0f, 2.0f},
+																					 {3.0f, 4.0f}};
 	float OBS = 2;
-	
 	// Hidden Markov Model
 	HMM model;
-	model.S = S;
-	model.V = V;
-	model.transition = malloc(S * S * sizeof(float));
-
-	model.emission = malloc(S * V * sizeof(float));
-	model.prior = malloc(S * sizeof(float));
-
-	int i, j;
-	for (i=0; i < S; i++) {
-		for (j=0; j < S; j++) {
-			model.transition[i][j] = (float)rand()/(float)(RAND_MAX);
-		}
-		for (j=0; j < V; j++) {
-			model.emission[i][j] = (float)rand()/(float)(RAND_MAX);
-		}
-		model.prior[i] = (float)rand()/(float)(RAND_MAX);
+	model.S = N_STATES;
+	model.V = N_OBS;
+	model.transition = malloc(N_STATES * sizeof(float*));
+	model.emission = malloc(N_STATES * sizeof(float*));
+	model.prior = malloc(N_STATES * sizeof(float*));
+	
+	for (int i=0; i < N_STATES; i++) {
+		model.transition[i] = malloc(N_STATES * sizeof(float*));
+		model.emission[i] = malloc(N_OBS * sizeof(float*));
 	}
+	
+	for (int i = 0; i < N_STATES; i++) {
+		for (int j = 0; j < N_STATES; j++) {
+			model.transition[i][j] = TRANSMISSION[i][j];
+		}
+		for (int j = 0; j < N_OBS; j++) {
+			model.emission[i][j] = EMMISSION[i][j];
+		}
+	}
+	
+
 	int s = ViterbiUpdate_c(vitpsi_i, vitpsi_o, OBS, &model);
 	
 	printf("%d\n", s);
