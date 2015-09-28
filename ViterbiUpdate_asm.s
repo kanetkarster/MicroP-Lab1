@@ -33,6 +33,7 @@ ViterbiUpdate_asm
 			VLDR.F32 max_prob, =0										;initial max value
 			VLDR.F32 max_state, =0									;initial max state
 
+
 			LDR 	nStates, [p_HMM], #8							;nStates
 			LDR 	p_p_trans, [p_HMM], #4						;Addr of addr of Trans Matrix			
 			LDR		p_p_emiss, [p_HMM], #4						;Addr of addr of Emission matrix
@@ -96,6 +97,7 @@ sumLoop
 			ADD		p_vitpsiOut, p_vitpsiOut, #4			;move addr again
 			
 			VADD.F32 S4, S4, vitpsiOut							;update sum
+			ADD		cnt, cnt, #1
 			B		sumLoop
 sumReturn
 			VLDR.F32 S8, =1.0
@@ -110,6 +112,7 @@ updateVitLoop
 			VMUL.F32	vitpsiOut, vitpsiOut, S4			;update the value of vit[cnt][t]
 			VSTR.F32	vitpsiOut, [p_vitpsiOut]			;store back into the vitspe vector
 			ADD		p_vitpsiOut, p_vitpsiOut, #8			;shift over 2 spot for next vit entry
+			ADD		cnt, cnt, #1
 updateReturn
 			POP		{p_vitpsiOut}											;restore addr for return
 			BX 		LR																;exit

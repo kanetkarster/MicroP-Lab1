@@ -17,7 +17,7 @@ typedef struct {
 } HMM;
 
 // Assembly Functions
-extern int ViterbiUpdate_asm(float* viterbi_in, float* viterbi_out, float obs, HMM *model);
+extern int ViterbiUpdate_asm(float* viterbi_in, float* viterbi_out, int obs, HMM *model);
 int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, HMM *model);
 int main()
 {	
@@ -28,7 +28,7 @@ int main()
 	float EMMISSION[N_STATES][N_OBS]= {1.0f, 2.0f};
 	float TRANSMISSION[N_STATES][N_STATES]= {{1.0f, 2.0f},
 																					 {3.0f, 4.0f}};
-	float OBS = 2;
+	int OBS = 2;
 	// Hidden Markov Model
 	HMM model;
 	model.S = N_STATES;
@@ -54,7 +54,7 @@ int main()
 	}
 	
 
-	int s = ViterbiUpdate_c(vitpsi_i, vitpsi_o, OBS, &model);
+	int s = ViterbiUpdate_asm(vitpsi_i, vitpsi_o, OBS, &model);
 	
 	for (int i = 0; i < N_STATES; i++) {
 		printf("psi: %3.3f\t vit %3.3f\n", vitpsi_o[i], vitpsi_o[i+1]);
