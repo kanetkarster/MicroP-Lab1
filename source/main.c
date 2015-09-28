@@ -46,6 +46,8 @@ int main()
 		for (int j = 0; j < N_OBS; j++) {
 			model.emission[i][j] = EMMISSION[i][j];
 		}
+		vitpsi_i[i] = 0;
+		vitpsi_i[i+1] = 0;
 	}
 	
 
