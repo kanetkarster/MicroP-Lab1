@@ -49,8 +49,8 @@ int main()
 		for (int j = 0; j < N_OBS; j++) {
 			model.emission[i][j] = EMMISSION[i][j];
 		}
-		vitpsi_i[2*i] = RAND();
-		vitpsi_i[2*i+1] = RAND();
+		vitpsi_i[2*i] = .5;
+		vitpsi_i[2*i+1] = .25;
 	}
 	
 

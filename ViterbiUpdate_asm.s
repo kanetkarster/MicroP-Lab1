@@ -18,10 +18,13 @@ cntIn				RN R10
 
 vitpsiIn		SN S1
 vitpsiOut		SN S2
-transp			SN S3
+trans				SN S3
+
 max_prob 		SN S5
 max_state 	SN S6
 emiss				SN S7
+
+
 
 ViterbiUpdate_asm
 ;a0 A pointer to the vitpsiOut[(vit, psi),t-1] vector
@@ -38,47 +41,51 @@ ViterbiUpdate_asm
 			LDR 	p_p_trans, [p_HMM], #4						;Addr of addr of Trans Matrix			
 			LDR		p_p_emiss, [p_HMM], #4						;Addr of addr of Emission matrix
 			
+			VLDR.F32	max_prob, =-1000
+			
 			MOV		cnt, #0														;parameter for loop
 			MOV		cntIn, #0													;parameter for multiplyLoop
 			
 			LDR 	p_emiss,	[p_p_emiss]							;addr Emiss[0][]
 			LDR		p_trans, [p_p_trans]							;addr trans[0][]
-
+			
+			
 			PUSH	{p_vitpsiOut}											;preserve addr of vitpsiOut
 			
 loop																					;loop 0 to nStates
+			MOV		cntIn, #0
 			CMP		cnt, nStates
 			BEQ		returnLoop
 trans_pLoop																		;nested loop for transp math
 			CMP		cntIn, nStates
-			BEQ 	returnMult
+			BEQ 	returnTrans
 			VLDR.F32	vitpsiIn, [p_vitpsiIn], #4		;load vit and move addr
 			ADD		p_vitpsiIn, p_vitpsiIn, #4				;move addr once more			
-			VLDR.F32	transp, [p_trans]							;load trans[s_0,s]
-			VMUL.F32	S4, vitpsiIn, transp					;multiply vit[:,t-1] and trans[:,s]
+			VLDR.F32	trans, [p_trans]							;load trans[s_0,s]
+			VMUL.F32	S4, vitpsiIn, trans					;multiply vit[:,t-1] and trans[:,s]
 			
 			VCMP.F32	S4, max_prob
+			VMRS.F32	APSR_nzcv, FPSCR
 			VMOVGE.F32	max_prob, S4								;max Prob
 			VMOVGE.F32	max_state, cntIn						;max State
-			
-			ADD		p_trans, p_trans, nStates,LSL #2	;move p_trans to addr trans[S_0+4]
+			;ADD		p_p_trans, p_p_trans, #4
+			LDR		p_trans, [p_p_trans, #4]
+			;ADD		p_trans, p_trans, nStates,LSL #2	;move p_trans to addr trans[S_0+4]
 			ADD		cntIn, cntIn, #1
-			
 			B		trans_pLoop
 			
-returnMult
-			ADD		p_emiss, p_emiss, obs, LSL #2			;Move p_emiss to correct addr of Obs
+returnTrans
+			;ADD		p_emiss, p_emiss, obs, LSL #2			;Move p_emiss to correct addr of Obs
 			VLDR.F32 emiss, [p_emiss]								;load emiss[s][obs]
 			VMUL.F32 max_prob, max_prob, emiss			;update max_prob
 
 			VSTR.F32 max_prob, [p_vitpsiOut], #4		;update vit part of vitpsiOut
 			VSTR.F32 max_state, [p_vitpsiOut], #4		;update psi part of vitpsiOut
 			
-			
-			ADD		p_trans, p_trans, #4							;shift trans[s][] to trans[s+1][]
-			ADD		p_emiss, p_emiss, #4							;shift emiss[s] to emiss[s+1]
+			LDR		p_emiss, [p_p_emiss, #4]
+			;ADD		p_trans, p_trans, #4							;shift trans[s][] to trans[s+1][]
+			;ADD		p_emiss, p_emiss, #4							;shift emiss[s] to emiss[s+1]
 			ADD 	cnt, cnt, #1											;iterate loop var
-			
 			B loop
 returnLoop
 			;cnt free
@@ -113,9 +120,12 @@ updateVitLoop
 			VSTR.F32	vitpsiOut, [p_vitpsiOut]			;store back into the vitspe vector
 			ADD		p_vitpsiOut, p_vitpsiOut, #8			;shift over 2 spot for next vit entry
 			ADD		cnt, cnt, #1
+			B			updateVitLoop
 updateReturn
 			POP		{p_vitpsiOut}											;restore addr for return
 			BX 		LR																;exit
+			NOP
+			
 			
 			END
 				
