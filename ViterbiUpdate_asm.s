@@ -1,94 +1,118 @@
 		AREA ViterbiUpdate, CODE, READONLY
 			EXPORT ViterbiUpdate_asm
-ALIAS 
+
+p_vitpsiIn	RN R0
+p_vitpsiOut RN R1
+obs					RN R2
+p_HMM				RN R3
+nStates			RN R4
+;NOT USED 
+;vObs				RN R5 
+;NOT USED
+p_p_trans		RN R6
+p_trans			RN R12
+p_p_emiss		RN R7
+p_emiss			RN R8
+cnt					RN R9
+cntIn				RN R10
+
+vitpsiIn		SN S1
+vitpsiOut		SN S2
+transp			SN S3
+max_prob 		SN S5
+max_state 	SN S6
+emiss				SN S7
+
 ViterbiUpdate_asm
-;a0 A pointer to the vitpsi[(vit, psi),t-1] vector
-;a1 A pointer to the vitpsi[:,t] vector (for output)
+;a0 A pointer to the vitpsiOut[(vit, psi),t-1] vector
+;a1 A pointer to the vitpsiOut[:,t] vector (for output)
 ;a2 The observation 
 ;a3 A Pointer to the HMM variables (struct)
-			;VLDR S1, [R0]
-			VLDR.F32 S2, [R1]
-			VLDR.F32 S5, =0	;initial max value
-			VLDR.F32 S6, =0	;initial max state
 
-			LDR 	R4, [R3], #4	;nStates
-			LDR 	R5, [R3], #4 	;V obs
-			LDR 	R6, [R3], #4	;Addr of addr of Trans Matrix			
-			LDR		R7, [R3], #4	;Addr of addr of Emission matrix
-			;LDR		R8, [R3], #4	;Addr of Prior Matrix
+			VLDR.F32 vitpsiOut, [p_vitpsiOut]				;initally load vitpsiOut
+			VLDR.F32 max_prob, =0										;initial max value
+			VLDR.F32 max_state, =0									;initial max state
+
+			LDR 	nStates, [p_HMM], #8							;nStates
+			LDR 	p_p_trans, [p_HMM], #4						;Addr of addr of Trans Matrix			
+			LDR		p_p_emiss, [p_HMM], #4						;Addr of addr of Emission matrix
 			
-			MOV		R9, #0				;parameter for loop
-			MOV		R10, #0				;parameter for multiplyLoop
-			MOV 	R11, #0				;initialize trans_p
+			MOV		cnt, #0														;parameter for loop
+			MOV		cntIn, #0													;parameter for multiplyLoop
 			
-			MOV		R11, SP							;get stack pointer
-			;SUB		SP, SP, R4,LSL #2	;move stack pointer
-			LDR 	R8,	[R7]			;addr Emiss[0][]
-			LDR		R12, [R6]			;addr trans[0][]
-			;VLDR		S3, [R12]		;trans[0][0]
-			PUSH	{R1}
+			LDR 	p_emiss,	[p_p_emiss]							;addr Emiss[0][]
+			LDR		p_trans, [p_p_trans]							;addr trans[0][]
+
+			PUSH	{p_vitpsiOut}											;preserve addr of vitpsiOut
 			
-			B			loop
-loop											;loop 0 to S
-			CMP		R9, R4
-			BEQ		return
-			B			trans_pLoop
+loop																					;loop 0 to nStates
+			CMP		cnt, nStates
+			BEQ		returnLoop
+trans_pLoop																		;nested loop for transp math
+			CMP		cntIn, nStates
+			BEQ 	returnMult
+			VLDR.F32	vitpsiIn, [p_vitpsiIn], #4		;load vit and move addr
+			ADD		p_vitpsiIn, p_vitpsiIn, #4				;move addr once more			
+			VLDR.F32	transp, [p_trans]							;load trans[s_0,s]
+			VMUL.F32	S4, vitpsiIn, transp					;multiply vit[:,t-1] and trans[:,s]
+			
+			VCMP.F32	S4, max_prob
+			VMOVGE.F32	max_prob, S4								;max Prob
+			VMOVGE.F32	max_state, cntIn						;max State
+			
+			ADD		p_trans, p_trans, nStates,LSL #2	;move p_trans to addr trans[S_0+4]
+			ADD		cntIn, cntIn, #1
+			
+			B		trans_pLoop
+			
 returnMult
-			ADD		R8, R8, R2, LSL #2		;Move R8 to correct addr of Obs
-			VLDR.F32 S7, [R8]						;load emiss[s][obs]
-			VMUL.F32 S5, S5, S7
+			ADD		p_emiss, p_emiss, obs, LSL #2			;Move p_emiss to correct addr of Obs
+			VLDR.F32 emiss, [p_emiss]								;load emiss[s][obs]
+			VMUL.F32 max_prob, max_prob, emiss			;update max_prob
 
-			VSTR.F32 S5, [R1], #4			;update vit part of vitpsi
-			VSTR.F32 S6, [R1], #4			;update psi part of vitpsi
+			VSTR.F32 max_prob, [p_vitpsiOut], #4		;update vit part of vitpsiOut
+			VSTR.F32 max_state, [p_vitpsiOut], #4		;update psi part of vitpsiOut
 			
 			
-			ADD		R12, R12, #4				;shift trans[s][] to trans[s+1][]
-			ADD		R8, R8, #4					;shift emiss[s] to emiss[s+1]
-			ADD 	R9, R9, #1					;iterate loop var
+			ADD		p_trans, p_trans, #4							;shift trans[s][] to trans[s+1][]
+			ADD		p_emiss, p_emiss, #4							;shift emiss[s] to emiss[s+1]
+			ADD 	cnt, cnt, #1											;iterate loop var
 			
 			B loop
-return
-			;R9 free
-			;R10 free
-			;R12 free
-			;S3 free
+returnLoop
+			;cnt free
+			;cntIn free
+			;p_trans free
 			;S4 freeeeeeeeeeeeee
-			POP		{R1}
-			MOV	R9, #0
-			VLDR.F32 S4, =0							;clr s4 for storing sum/C[t]
-			B		sumLoop
+			POP		{p_vitpsiOut}
+			MOV	cnt, #0
+			VLDR.F32 S4, =0													;clr s4 for storing sum/C[t]
+			;B		sumLoop
+			PUSH		{p_vitpsiOut}
 sumLoop
-			CMP R9, R4
+			CMP cnt, nStates
 			BEQ sumReturn
-			VLDR.F32 S3, [R1], #4				;load vit[][t] and move addr
-			ADD		R1, R1, #4						;move addr again
+			VLDR.F32 vitpsiOut, [p_vitpsiOut], #4		;load vit[cnt][t] and move addr
+			ADD		p_vitpsiOut, p_vitpsiOut, #4			;move addr again
 			
-			VADD.F32 S4, S4, S3					;update sum
+			VADD.F32 S4, S4, vitpsiOut							;update sum
+			B		sumLoop
 sumReturn
-			VLDR.F32 S5, =1.0
-			VDIV.F32 S4, S5, S4				;divide scaling
-
-;TODO:
-;vit[:,t] = c[t] * vit[:,t]
-
-
-			BX 		LR
-
-trans_pLoop
-			CMP		R10, R4
-			BEQ 	returnMult
-			VLDR.F32	S1, [R0], #4				;load vit and move addr
-			ADD		R0, R0, #4							;move addr once more			
-			VLDR.F32	S3, [R12]						;load trans[s_0,s]
-			VMUL.F32	S4, S1, S3					;multiply vit[:,t-1] and trans[:,s]
+			VLDR.F32 S8, =1.0
+			VDIV.F32 S4, S8, S4											;divide for scaling factor
+			POP		{p_vitpsiOut}											;restore addr for vitpsiOut
+			MOV		cnt, #0														;reset counter
+updateVitLoop
+			CMP		cnt, nStates
+			BEQ		updateReturn
+			VLDR.F32	vitpsiOut, [p_vitpsiOut]			;load vit[cnt][t]
 			
-			VCMP.F32	S4, S5
-			VMOVGE.F32	S5, S4						;max Prob
-			VMOVGE.F32	S6, R10						;max State
-			
-			ADD		R12, R12, R4,LSL #2	;move R12 to addr trans[S_0+4]
-			ADD		R10, R10, #1
-			
+			VMUL.F32	vitpsiOut, vitpsiOut, S4			;update the value of vit[cnt][t]
+			VSTR.F32	vitpsiOut, [p_vitpsiOut]			;store back into the vitspe vector
+			ADD		p_vitpsiOut, p_vitpsiOut, #8			;shift over 2 spot for next vit entry
+updateReturn
+			POP		{p_vitpsiOut}											;restore addr for return
+			BX 		LR																;exit
 			
 			END
 				
