@@ -4,6 +4,9 @@
 
 #define N_STATES 2
 #define N_OBS 1
+
+#define RAND() (float)rand()/(float)(RAND_MAX)
+
 // typedefs
 typedef struct {
 	int S;
@@ -46,8 +49,8 @@ int main()
 		for (int j = 0; j < N_OBS; j++) {
 			model.emission[i][j] = EMMISSION[i][j];
 		}
-		vitpsi_i[i] = 0;
-		vitpsi_i[i+1] = 0;
+		vitpsi_i[2*i] = RAND();
+		vitpsi_i[2*i+1] = RAND();
 	}
 	
 
