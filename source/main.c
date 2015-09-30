@@ -3,7 +3,7 @@
 #include "arm_math.h"
 
 #define N_STATES 2
-#define N_OBS 1
+#define N_OBS 3
 
 #define RAND() (float)rand()/(float)(RAND_MAX)
 
@@ -22,14 +22,14 @@ int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, HMM *model);
 int main()
 {	
 	// VITPSI
-	float vitpsi_i[N_STATES];
-	float vitpsi_o[N_STATES];
+	float vitpsi_i[2*N_STATES];
+	float vitpsi_o[2*N_STATES];
 	
 	float EMMISSION[N_STATES][N_OBS]= {1.0f, 2.0f};
 	float TRANSMISSION[N_STATES][N_STATES]= {{1.0f, 2.0f},
 																					 {3.0f, 4.0f}};
 
-	int OBS = 2;
+	int OBS = 0;
 
 	// Hidden Markov Model
 	HMM model;
@@ -50,9 +50,12 @@ int main()
 	
 
 	int s = ViterbiUpdate_asm(vitpsi_i, vitpsi_o, OBS, &model);
-	
-	for (int i = 0; i < N_STATES; i++) {
-		printf("psi: %3.3f\t vit %3.3f\n", vitpsi_o[i], vitpsi_o[2*i+1]);
+	float temp[2*N_STATES];
+	//for (int j = 0; j < 2*N_STATES; j++) {
+	//	temp[j] = vitpsi_o[j];
+	//}
+	for (int i = 0; i < N_STATES; i++) { 
+		printf("vit: %f\t psi: %d\n", vitpsi_o[2*i], vitpsi_o[2*i+1]);
 	}
 	
 	printf("%d\n", s);
