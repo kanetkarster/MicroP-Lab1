@@ -52,7 +52,7 @@ int main()
 	int s = ViterbiUpdate_asm(vitpsi_i, vitpsi_o, OBS, &model);
 	
 	for (int i = 0; i < N_STATES; i++) {
-		printf("psi: %3.3f\t vit %3.3f\n", vitpsi_o[i], vitpsi_o[i+1]);
+		printf("psi: %3.3f\t vit %3.3f\n", vitpsi_o[i], vitpsi_o[2*i+1]);
 	}
 	
 	printf("%d\n", s);
