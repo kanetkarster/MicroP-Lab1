@@ -19,18 +19,20 @@ typedef struct {
 // Assembly Functions
 extern int ViterbiUpdate_asm(float* viterbi_in, float* viterbi_out, float obs, HMM *model);
 int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, HMM *model);
+int Viterbi_C(int* Observations, int Nobs, int* EstimatedStates, HMM* hmm);
+
 int main()
 {	
-	// VITPSI
-	float vitpsi_i[2*N_STATES];
-	float vitpsi_o[2*N_STATES];
-	
+	// output
+	int EstimatedStates[N_OBS];
+	// initial values for HMM
 	float EMMISSION[N_STATES][N_OBS]= {1.0f, 2.0f};
 	float TRANSMISSION[N_STATES][N_STATES]= {{1.0f, 2.0f},
-																					 {3.0f, 4.0f}};
-	float OBS = 2;
-																					 
-	// Hidden Markov Model
+																					 {31.0f, 4.0f}};
+	float PRIOR[N_STATES] = {.25, .5};
+	int Observations[N_OBS] = {1};
+	
+	// Fill Hidden Markov Model
 	HMM model;
 	model.S = N_STATES;
 	model.V = N_OBS;
@@ -41,21 +43,36 @@ int main()
 		for (int j = 0; j < N_OBS; j++) {
 			model.emission[i][j] = EMMISSION[i][j];
 		}
-		vitpsi_i[2*i] = .5;
-		vitpsi_i[2*i+1] = .5;
+		model.prior[i] = PRIOR[i];
 	}
 	
-
-	int s = ViterbiUpdate_c(vitpsi_i, vitpsi_o, OBS, &model);
+	int s = Viterbi_C(Observations, N_OBS, EstimatedStates, &model);
 	
-	for (int i = 0; i < N_STATES; i++) {
-		printf("psi: %3.3f\t vit %3.3f\n", vitpsi_o[2*i], vitpsi_o[2*i+1]);
+	for (int i = 0; i < N_OBS; i++) {
+		printf("Observed State: %d\n", EstimatedStates[i]);
 	}
 	
-	printf("%d\n", s);
 	return 0;
 }
-
+int Viterbi_C(int* Observations, int Nobs, int* EstimatedStates, HMM* hmm) {
+	float states[Nobs+1][2*N_STATES];
+	states[0][0] = hmm->prior[0];
+	states[0][1] = hmm->prior[1];
+	
+	for (int i = 0; i < Nobs; i++) {
+		ViterbiUpdate_c(states[i], states[i+1], Observations[i], hmm);
+	}
+	
+	float prob = -1;
+	for (int i = 0; i < N_STATES; i++) {
+		if (states[N_OBS][2*i] > prob) {
+			prob = states[N_OBS][2*i];
+			EstimatedStates[i] = (int) states[N_OBS][2*i+1];
+		}
+	}
+	//printf("Ends at:\n");
+	return 0;
+}
 int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, HMM *model) {
 	float trans_p[N_STATES];
 	float max = -1000;
