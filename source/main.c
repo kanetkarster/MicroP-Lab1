@@ -11,8 +11,8 @@
 typedef struct {
 	int S;
 	int V;
-	float** transition;
-	float** emission;
+	float transition[N_STATES][N_STATES];
+	float emission[N_STATES][N_OBS];
 	float* prior;
 } HMM;
 
@@ -22,26 +22,18 @@ int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, HMM *model);
 int main()
 {	
 	// VITPSI
-	float* vitpsi_i = malloc(2*N_STATES*sizeof(float));
-	float* vitpsi_o = malloc(2*N_STATES*sizeof(float));
+	float vitpsi_i[N_STATES];
+	float vitpsi_o[N_STATES];
 	
 	float EMMISSION[N_STATES][N_OBS]= {1.0f, 2.0f};
 	float TRANSMISSION[N_STATES][N_STATES]= {{1.0f, 2.0f},
 																					 {3.0f, 4.0f}};
 	float OBS = 2;
+																					 
 	// Hidden Markov Model
 	HMM model;
 	model.S = N_STATES;
 	model.V = N_OBS;
-	model.transition = malloc(N_STATES * sizeof(float*));
-	model.emission = malloc(N_STATES * sizeof(float*));
-	model.prior = malloc(N_STATES * sizeof(float*));
-	
-	for (int i=0; i < N_STATES; i++) {
-		model.transition[i] = malloc(N_STATES * sizeof(float*));
-		model.emission[i] = malloc(N_OBS * sizeof(float*));
-	}
-	
 	for (int i = 0; i < N_STATES; i++) {
 		for (int j = 0; j < N_STATES; j++) {
 			model.transition[i][j] = TRANSMISSION[i][j];
@@ -49,8 +41,8 @@ int main()
 		for (int j = 0; j < N_OBS; j++) {
 			model.emission[i][j] = EMMISSION[i][j];
 		}
-		vitpsi_i[2*i] = RAND();
-		vitpsi_i[2*i+1] = RAND();
+		vitpsi_i[2*i] = .3 * i;
+		vitpsi_i[2*i+1] = .25 * i;
 	}
 	
 
@@ -70,8 +62,7 @@ int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, HMM *model) 
 	float sum = 0;
 	for (int s = 0; s < model->S; s++) {
 		for (int j = 0; j < 2*model->S; j++) {
-			float* transmitted = model->transition[j] + j*sizeof(&model->transition);
-			float val = viterbi_in[j] * *transmitted;
+			float val = viterbi_in[j] * model->transition[j][s];
 			sum += val;
 			if (val > max) {
 				max = val;
