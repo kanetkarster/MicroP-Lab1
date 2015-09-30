@@ -11,16 +11,18 @@ nStates			RN R4
 ;NOT USED
 p_trans			RN R5
 p_emiss			RN R6
-nStatesq		RN R8
+max_state 	RN R7
+;nStatesq		RN R8
 cnt					RN R9
 cntIn				RN R10
+update			RN R11
 
 vitpsiIn		SN S1
 vitpsiOut		SN S2
 trans				SN S3
 
 max_prob 		SN S5
-max_state 	RN R7
+
 emiss				SN S7
 
 
@@ -40,9 +42,13 @@ ViterbiUpdate_asm
 			LDR 	nStates, [p_HMM], #8							;nStates
 			;VLDR.F32 	trans, [p_HMM]								;Trans[0][0]
 			MOV		p_trans, p_HMM							
-			MOV		p_emiss, p_HMM							;addr of addr of Emission matrix
-			MUL		nStatesq, nStates, nStates
-			ADD		p_emiss, p_emiss, nStatesq, LSL #2
+			MOV		p_emiss, p_HMM							;addr of Emission matrix
+			
+			MUL		R8, nStates, nStates
+			ADD		p_emiss, p_emiss, R8, LSL #2
+			SUB		p_HMM, p_HMM, #4
+			MOV		R8, #0
+			LDR		R8, [p_HMM]
 			;ADD		p_emiss, p_emiss, nStates, LSL #2
 			
 			VLDR.F32	max_prob, =-1000
@@ -61,6 +67,8 @@ loop																					;loop 0 to nStates
 			PUSH	{p_trans}
 			ADD		p_trans, p_trans, #4
 			CMP		cnt, nStates
+			MUL		update, R8, cnt
+			ADD		p_emiss, p_emiss, update,LSL #2
 			BEQ		returnLoop
 trans_pLoop																		;nested loop for transp math
 			CMP		cntIn, nStates
@@ -81,13 +89,15 @@ trans_pLoop																		;nested loop for transp math
 			B		trans_pLoop
 			
 returnTrans
-			
-			VLDR.F32 emiss, [p_emiss], #4							;load emiss[s][obs]
+			ADD		p_emiss, p_emiss, obs, LSL #2
+			VLDR.F32 emiss, [p_emiss]								;load emiss[cnt][0]
 			VMUL.F32 max_prob, max_prob, emiss			;update max_prob
 
 			VSTR.F32 max_prob, [p_vitpsiOut]		;update vit part of vitpsiOut
 			ADD		p_vitpsiOut, p_vitpsiOut, #4
-			STR max_state, [p_vitpsiOut]				;update psi part of vitpsiOut
+			VMOV  S6, max_state
+			VCVT.F32.S32	S6, S6
+			VSTR.F32 S6, [p_vitpsiOut]				;update psi part of vitpsiOut
 			ADD		p_vitpsiOut, p_vitpsiOut, #4
 			
 			;ADD		p_emiss, p_emiss, nStates, LSL #2						;shift emiss over S
