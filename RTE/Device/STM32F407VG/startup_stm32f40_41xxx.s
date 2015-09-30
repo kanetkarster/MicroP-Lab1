@@ -177,7 +177,7 @@ __Vectors_Size  EQU  __Vectors_End - __Vectors
 Reset_Handler    PROC
                  EXPORT  Reset_Handler            [WEAK]
 		IMPORT __main
-		IMPORT ViterbiUpdate_asm
+		;IMPORT ViterbiUpdate_asm
 		; Enable FPU
 		LDR.W R0, =0xE000ED88
 		LDR R1, [R0]
