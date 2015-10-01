@@ -178,6 +178,7 @@ Reset_Handler    PROC
                  EXPORT  Reset_Handler            [WEAK]
 		IMPORT __main
 		IMPORT ViterbiUpdate_asm
+		IMPORT ViterbiTestbed_asm
 		; Enable FPU
 		LDR.W R0, =0xE000ED88
 		LDR R1, [R0]
@@ -187,7 +188,7 @@ Reset_Handler    PROC
 		ISB
 		
 		; Call Function
-		LDR	R0, =__main
+		LDR	R0, = __main
 		BX	R0
 		ENDP
 ; Dummy Exception Handlers (infinite loops which can be modified)
