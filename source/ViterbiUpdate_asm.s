@@ -32,7 +32,7 @@ ViterbiUpdate_asm
 ;a1 A pointer to the vitpsiOut[:,t] vector (for output)
 ;a2 The observation 
 ;a3 A Pointer to the HMM variables (struct)
-	
+			PUSH {R4-R11}
 			;MOV 	p_trans, #0
 			;MOV		p_emiss, #0
 			;MOV		max_state, #0
@@ -164,6 +164,7 @@ updateVitLoop
 			B			updateVitLoop
 updateReturn
 			POP		{p_vitpsiOut}										;restore addr for return
+			POP		{R4-R11}
 			BX 		LR																;exit
 			NOP
 			
