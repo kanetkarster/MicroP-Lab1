@@ -32,7 +32,20 @@ ViterbiUpdate_asm
 ;a1 A pointer to the vitpsiOut[:,t] vector (for output)
 ;a2 The observation 
 ;a3 A Pointer to the HMM variables (struct)
-
+	
+			;MOV 	p_trans, #0
+			;MOV		p_emiss, #0
+			;MOV		max_state, #0
+			;MOV		cnt,#0
+			;MOV		cntIn, #0
+			;MOV		update, #0
+			;VLDR.F32	vitpsiIn, =0.0
+			;VLDR.F32	vitpsiOut, =0.0
+			;VLDR.F32	trans, =0.0
+			;VLDR.F32	max_prob, =0.0
+			;VLDR.F32	emiss, =0.0
+			
+			
 			VLDR.F32 vitpsiOut, [p_vitpsiOut]				;initally load vitpsiOut
 			VLDR.F32 max_prob, =0										;initial max value
 			;VLDR.F32 max_state, =0									;initial max state

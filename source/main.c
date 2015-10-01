@@ -84,10 +84,12 @@ int main()
 	//int nobs = 20;
 	int obs[3] = {0, 1, 2};
 	float viterbi_in[2*S_DEF];
+	float viterbi_3[2*S_DEF];
 	for (i=0; i < S_DEF; i++) {
 		viterbi_in[2*i] = hmm1.prior[i] * hmm1.emission[i][obs[0]];
 		viterbi_in[2*i + 1] = 0;
 	}
+	
 	float viterbi_out[2*S_DEF];
 	int s = ViterbiUpdate_asm(viterbi_in, viterbi_out, obs[1], &hmm1);
 	//float temp[2*S_DEF];
@@ -98,7 +100,20 @@ int main()
 		printf("vit: %f\t psi: %f\n", viterbi_out[2*i], viterbi_out[2*i+1]);
 	}
 	
+	viterbi_out[0] = .084f;
+	viterbi_out[2] = .027f;
+	
+	s = ViterbiUpdate_asm(viterbi_out, viterbi_3, obs[2], &hmm1);
+	//float temp[2*S_DEF];
+	//for (int j = 0; j < 2*N_STATES; j++) {
+	//	temp[j] = vitpsi_o[j];
+	//}
+	for (int i = 0; i < S_DEF; i++) { 
+		printf("vit: %f\t psi: %f\n", viterbi_3[2*i], viterbi_3[2*i+1]);
+	}
+	
 	printf("%d\n", s);
+	
 	return 0;
 }
 
