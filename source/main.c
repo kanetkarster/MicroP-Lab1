@@ -26,7 +26,7 @@ int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, hmm_desc *mo
 int Viterbi_C(int* Observations, int Nobs, int* EstimatedStates, hmm_desc* hmm);
 
 float states[N_OBS_TAKEN+1][2*S_DEF];
-
+float EstimatedStates[N_OBS_TAKEN];
 int main()
 {	
 
@@ -92,23 +92,26 @@ int Viterbi_C(int* Observations, int Nobs, int* EstimatedStates, hmm_desc* hmm) 
 	}
 	for (int i = 1; i < Nobs+1; i++) {
 		ViterbiUpdate_c(states[i-1], states[i], Observations[i], hmm);
-		for (int j = 0; j < S_DEF; j++) { 
-			printf("(%f, %f)\t", states[i][2*j], states[i][2*j+1]);
-		}
-		printf("\n");
+//		for (int j = 0; j < S_DEF; j++) { 
+//			printf("(%f, %f)\t", states[i][2*j], states[i][2*j+1]);
+//		}
+//		printf("\n");
 	}
 	
-	float prob = -1;
-	for (int i = 0; i < S_DEF; i++) {
-		if (states[V_DEF][2*i] > prob) {
-			prob = states[V_DEF][2*i];
-			EstimatedStates[i] = (int) states[V_DEF][2*i+1];
+	for (int i = 1; i < Nobs+1; i++) {
+		float max = -1;
+		for (int j = 0; j < S_DEF; j++) {
+			if (states[i][2*j] > max) {
+				max = states[i][2*j];
+				EstimatedStates[i-1] = (int) states[i][2*j+1];
+				printf("(%f, %f)\t", states[i][2*j], states[i][2*j+1]);
+			}
 		}
+		printf("\n");
 	}
 	for (int i = 0; i < Nobs; i++) {
 		printf("%d\t", EstimatedStates[i]);
 	}
-	printf("Max Prob: %3.3f\n", prob);
 	return 0;
 }
 int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, hmm_desc *model) {
