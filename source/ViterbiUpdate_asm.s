@@ -63,13 +63,13 @@ ViterbiUpdate_asm
 			
 loop																					;loop 0 to nStates
 			MOV		cntIn, #0
+			CMP		cnt, nStates
+			BEQ		returnLoop
 			PUSH	{p_vitpsiIn}
 			PUSH	{p_trans}
-			ADD		p_trans, p_trans, #4
-			CMP		cnt, nStates
+			PUSH	{p_emiss}
 			MUL		update, R8, cnt
 			ADD		p_emiss, p_emiss, update,LSL #2
-			BEQ		returnLoop
 trans_pLoop																		;nested loop for transp math
 			CMP		cntIn, nStates
 			BEQ 	returnTrans
@@ -103,6 +103,7 @@ returnTrans
 			;ADD		p_emiss, p_emiss, nStates, LSL #2						;shift emiss over S
 			
 			ADD 	cnt, cnt, #1											;iterate loop var
+			POP		{p_emiss}
 			POP		{p_trans}
 			ADD		p_trans, p_trans, #4						;move addr_trans to addr trans[S_0+4]
 			POP		{p_vitpsiIn}
@@ -115,8 +116,9 @@ returnLoop
 			;R12 free
 			;R8 free
 			;S4 freeeeeeeeeeeeee
-			POP	{p_trans}
-			POP	{p_vitpsiIn}
+			;POP	{p_emiss}
+			;POP	{p_trans}
+			;POP	{p_vitpsiIn}
 			POP		{p_vitpsiOut}
 			MOV	cnt, #0
 			VLDR.F32 S4, =0													;clr s4 for storing sum/C[t]
