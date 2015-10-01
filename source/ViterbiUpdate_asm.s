@@ -28,23 +28,7 @@ emiss				SN S7
 
 
 ViterbiUpdate_asm
-;a0 A pointer to the vitpsiOut[(vit, psi),t-1] vector
-;a1 A pointer to the vitpsiOut[:,t] vector (for output)
-;a2 The observation 
-;a3 A Pointer to the HMM variables (struct)
 			PUSH {R4-R11}
-			;MOV 	p_trans, #0
-			;MOV		p_emiss, #0
-			;MOV		max_state, #0
-			;MOV		cnt,#0
-			;MOV		cntIn, #0
-			;MOV		update, #0
-			;VLDR.F32	vitpsiIn, =0.0
-			;VLDR.F32	vitpsiOut, =0.0
-			;VLDR.F32	trans, =0.0
-			;VLDR.F32	max_prob, =0.0
-			;VLDR.F32	emiss, =0.0
-			
 			
 			VLDR.F32 vitpsiOut, [p_vitpsiOut]				;initally load vitpsiOut
 			VLDR.F32 max_prob, =0										;initial max value
@@ -64,7 +48,7 @@ ViterbiUpdate_asm
 			LDR		R8, [p_HMM]
 			;ADD		p_emiss, p_emiss, nStates, LSL #2
 			
-			VLDR.F32	max_prob, =-1000
+			
 			
 			MOV		cnt, #0														;parameter for loop
 			MOV		cntIn, #0													;parameter for multiplyLoop
@@ -75,6 +59,7 @@ ViterbiUpdate_asm
 			PUSH	{p_vitpsiOut}											;preserve addr of vitpsiOut
 			
 loop																					;loop 0 to nStates
+			VLDR.F32	max_prob, =-1000
 			MOV		cntIn, #0
 			CMP		cnt, nStates
 			BEQ		returnLoop
@@ -124,14 +109,6 @@ returnTrans
 
 			B loop
 returnLoop
-			;cnt free
-			;cntIn free
-			;R12 free
-			;R8 free
-			;S4 freeeeeeeeeeeeee
-			;POP	{p_emiss}
-			;POP	{p_trans}
-			;POP	{p_vitpsiIn}
 			POP		{p_vitpsiOut}
 			MOV	cnt, #0
 			VLDR.F32 S4, =0													;clr s4 for storing sum/C[t]

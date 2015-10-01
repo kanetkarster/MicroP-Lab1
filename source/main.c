@@ -19,50 +19,6 @@ extern int ViterbiUpdate_asm(float* viterbi_in, float* viterbi_out, int obs,  hm
 int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs,  hmm_desc *model);
 int main()
 {	
-	/*
-	// VITPSI
-	float vitpsi_i[2*N_STATES];
-	float vitpsi_o[2*N_STATES];
-	
-	float EMMISSION[N_STATES][N_OBS]= {{2.0f, 2.0f, 3.0f, 1.0f},
-																		{1.0f, 1.0f, 2.0f, 2.0f},
-																		{2.0f, 1.0f, 2.0f, 1.0f}};
-	float TRANSMISSION[N_STATES][N_STATES]= {{1.0f, 5.0f, 4.0f},
-																					 {1.0f, 1.0f, 3.0f},
-																					 {2.0f, 2.0f, 1.0f}};
-
-	int OBS = 2;
-																					 
-																					 //{{1.0f, 1.0f, 2.0f},
-																					 //{5.0f, 1.0f, 2.0f},
-																					 //{4.0f, 3.0f, 1.0f}};
-
-	// Hidden Markov Model
-	HMM model;
-	model.S = N_STATES;
-	model.V = N_OBS;
-	for (int i = 0; i < N_STATES; i++) {
-		for (int j = 0; j < N_STATES; j++) {
-			model.transition[i][j] = TRANSMISSION[i][j];
-		}
-		for (int j = 0; j < N_OBS; j++) {
-			model.emission[i][j] = EMMISSION[i][j];
-		}
-
-		//vitpsi_i[2*i] = .5;
-		//vitpsi_i[2*i+1] = .25;
-
-	}
-	
-	vitpsi_i[0] = 1.0f;
-	vitpsi_i[1] = 2.0f;
-	
-	vitpsi_i[2] = 2.0f;
-	vitpsi_i[3] = 0.0f;
-	
-	vitpsi_i[4] = 2.0f;
-	vitpsi_i[5] = 1.0f;
-	*/
 	int i;
 	//This is one of the three hmm structs that you will be provided
 	hmm_desc hmm1 = {
@@ -93,6 +49,10 @@ int loop = 0;
 for (int j=1; j < N_OBS_TAKEN; j++) {
 	float viterbi_out[2*S_DEF];
 	int s = ViterbiUpdate_asm(viterbi_in, viterbi_out, obs[j], &hmm1);
+	for (int k = 0; k < S_DEF; k++){
+		viterbi_in[2*k] = viterbi_out[2*k], viterbi_in[2*k+1] = viterbi_out[2*k+1];
+	
+	}
 
 	//float temp[2*S_DEF];
 	//for (int j = 0; j < 2*N_STATES; j++) {
