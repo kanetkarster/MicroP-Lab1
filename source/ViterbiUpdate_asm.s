@@ -83,9 +83,9 @@ returnTrans
 			B 		loop
 returnLoop
 			POP		{p_vitpsiOut}											;restore address that were preserved
-			MOV		cnt, #0															;reset loop/count var
+			MOV		cnt, #0														;reset loop/count var
 			VLDR.F32 S4, =0													;clr s4 for storing sum/C[t]
-			PUSH	{p_vitpsiOut}										;preserve addr
+			PUSH	{p_vitpsiOut}											;preserve addr
 sumLoop
 			CMP 	cnt, nStates
 			BEQ 	sumReturn
