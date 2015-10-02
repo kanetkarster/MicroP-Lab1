@@ -1,18 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "arm_math.h"
+#include "test.h"
 
-#define S_DEF 4
-#define V_DEF 3
-#define N_OBS_TAKEN 20
-
-typedef struct {
-	int S;
-	int V;
-	float transition[S_DEF][S_DEF];
-	float emission[S_DEF][V_DEF];
-	float prior[S_DEF];
-} hmm_desc;
 
 // Assembly Functions
 extern int ViterbiUpdate_asm(float* viterbi_in, float* viterbi_out, int obs, hmm_desc *model);
@@ -21,11 +11,6 @@ int Viterbi_C(int* Observations, int Nobs, int* EstimatedStates, hmm_desc* hmm);
 
 float states[N_OBS_TAKEN+1][2*S_DEF];
 float EstimatedStates[N_OBS_TAKEN];
-float accObs[45] = {-0.47, 0.51, 0.69, 0.02, 0.54, 0.12, -0.48, 0.42, 3.73, 
-										6.19, 6.74, 6.49, -5.71, -4.15, -7.35, -7.20, -7.02, -3.11,
-										4.37, 2.17, 4.36, 1.86, -0.62, 0.49, 0.08, 0.60, 0.27, 
-										0.12, 6.67, 7.13, 7.92, 0.80, -1.77, -3.59, -0.87, 4.60, 
-										4.25, 6.57, 2.44, 0.03, 0.56, 0.10, 0.48, 0.33, 0.12};
 int acceleratometer_observations[9];
 int acceleratometer_states[9];
 										
@@ -39,9 +24,6 @@ int acceleratometer_states[9];
 	\param nObs	size of observation	
 */										
 int ReadAccelerometer(float* data, int data_len, int* observation, int* nObs) {
-	float alpha1 = 0.7;
-	float alpha2 = 0.8;
-	int N[] = {3, 3, 3};
 	int ct[3] = {0, 0, 0};
 	int last_entry = -1;
 	int current_state = 0;
@@ -86,21 +68,10 @@ int ReadAccelerometer(float* data, int data_len, int* observation, int* nObs) {
 */
 int main()
 {	
-	
+	/*
 	hmm_desc hmm1 = {
 	S_DEF, 
 	V_DEF,
-//#ifdef __WIKIPEDIA_TEST__
-//	{
-//		{.7, .3},
-//		{.4, .6}
-//	},
-//	{
-//		{.5, .4, .1},
-//		{.1, .3, .6}
-//	},
-//		{.6, .4}
-//#elif __MYCOURSES_TEST__
 	{
 		{0.09f, 0.9f, 0.01f, 0.0f},
 		{0.09f, 0.01f, 0.9f, 0.0f},
@@ -114,27 +85,47 @@ int main()
 		{0.0f, 1.0f, 0.0f}
 	},
 		{0.25f, 0.25f, 0.25f, 0.25f}
-//#endif
 	};
+	*/
 	//This is the array of observations (same for all three hmm structs)
 	//int vitTestArray[20] = {2,1,1,2,1,2,1,0,1,2,1,1,2,1,2,1,1,2,1,0};
 	//The number of observations
-	//int nobs = 20;
 	// int obs[N_OBS_TAKEN] = {0, 1, 2};
-	int obs[N_OBS_TAKEN] = {2,1,1,2,1,2,1,0,1,2,1,1,2,1,2,1,1,2,1,0};
+	//int obs[N_OBS_TAKEN] = {2,1,1,2,1,2,1,0,1,2,1,1,2,1,2,1,1,2,1,0};
 	//float viterbi_in[2*S_DEF];
 	int EstimatedStates[N_OBS_TAKEN];
-	printf("ESTIMATED STATES TEST 1\n");
-	printf("=======================\n");
-	Viterbi_C(obs, N_OBS_TAKEN, EstimatedStates, &hmm1);
-
-	int nobs;
+//	printf("ESTIMATED STATES TEST 1\n");
+//	printf("=======================\n");
+//	Viterbi_C(obs, N_OBS_TAKEN, EstimatedStates, &hmm3);
+//	
+/*
+	int accel_obs;
 	printf("OBSERVATIONS FROM ACCELEROMETER\n");
 	printf("===============================\n");
-	ReadAccelerometer(accObs, 45, acceleratometer_observations, &nobs);
+	ReadAccelerometer(accObs, 45, acceleratometer_observations, &accel_obs);
 	printf("ESTIMATED STATES TEST 2\n");
 	printf("=======================\n");
-	Viterbi_C(acceleratometer_observations, 9, EstimatedStates, &hmm1);
+	Viterbi_C(acceleratometer_observations, accel_obs, EstimatedStates, &hmm1);
+*/
+  float viterbi_test1[2*S_DEF];
+	printf("Viterbi Update 1\n");
+	printf("================\n");
+	ViterbiUpdate_c(InputArray_1, viterbi_test1, Observation_1, &hmm1);
+	for (int i = 0; i < S_DEF; i++) {
+		printf("(%f, %f)\t", viterbi_test1[2*i], viterbi_test1[2*i+1]);
+	}
+//	printf("\nViterbi Update 2\n");
+//	printf("================\n");
+//	ViterbiUpdate_c(InputArray_2, viterbi_test1, Observation_1, &hmm2);
+//	for (int i = 0; i < S_DEF; i++) {
+//		printf("(%f, %f)\t", viterbi_test1[2*i], viterbi_test1[2*i+1]);
+//	}
+//	printf("\nViterbi Update 3\n");
+//	printf("================\n");
+//	ViterbiUpdate_c(InputArray_3, viterbi_test1, Observation_1, &hmm3);
+//	for (int i = 0; i < S_DEF; i++) {
+//		printf("(%f, %f)\t", viterbi_test1[2*i], viterbi_test1[2*i+1]);
+//	}
 	return 0;
 }
 
@@ -145,13 +136,13 @@ int main()
 	\param HMM hidden markov model used for data input
 */
 int Viterbi_C(int* Observations, int Nobs, int* EstimatedStates, hmm_desc* hmm) {
-	for (int i =0; i < S_DEF; i++) {
+	for (int i =0; i < hmm->S; i++) {
 		states[0][2*i] = hmm->prior[i] * hmm->emission[i][Observations[0]];
 		states[0][2*i+1] = 0;
 		//printf("%f = %f * %f\n", states[0][2*i], hmm->prior[i], hmm->emission[i][Observations[0]]);
 	}
 	for (int i = 1; i < Nobs+1; i++) {
-		ViterbiUpdate_asm(states[i-1], states[i], Observations[i], hmm);
+		ViterbiUpdate_c(states[i-1], states[i], Observations[i], hmm);
 	}
 	for (int i = 1; i < Nobs+1; i++) {
 		float max = -1;
