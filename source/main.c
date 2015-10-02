@@ -28,6 +28,16 @@ float accObs[45] = {-0.47, 0.51, 0.69, 0.02, 0.54, 0.12, -0.48, 0.42, 3.73,
 										4.25, 6.57, 2.44, 0.03, 0.56, 0.10, 0.48, 0.33, 0.12};
 int acceleratometer_observations[9];
 int acceleratometer_states[9];
+										
+/*!
+	ReadAccelerometer takes in an array of accelerometer data and gets observation
+	values based off the accelerometer readings
+										
+	\param data
+	\param data_len size of data
+	\param observation output vector containing observed data.
+	\param nObs	size of observation	
+*/										
 int ReadAccelerometer(float* data, int data_len, int* observation, int* nObs) {
 	float alpha1 = 0.7;
 	float alpha2 = 0.8;
@@ -38,6 +48,7 @@ int ReadAccelerometer(float* data, int data_len, int* observation, int* nObs) {
 	*nObs = 0;
 	int z;
 	for (int i=0; i < data_len; i++) {
+		// Determine current state
 		if (-1*alpha1 < data[i] && data[i] < alpha1) {
 			z = 0;
 		} 
@@ -49,11 +60,13 @@ int ReadAccelerometer(float* data, int data_len, int* observation, int* nObs) {
 		} 
 		else z = -1;
 		if (z != -1) {
+			// resets count vector if new observation
 			if (z != current_state) {
 				ct[current_state] = 0;
 				current_state = z;
 			}
 			ct[z]++;
+			// adds observation if more than N entries
 			if (ct[z] >= N[z] && z != last_entry) {
 				observation[*nObs] = z;
 				last_entry = z;
@@ -65,7 +78,12 @@ int ReadAccelerometer(float* data, int data_len, int* observation, int* nObs) {
 	printf("\n");
 	return 0;
 }
-										
+/*!
+	Calls tests in order:
+1. Test 1
+2. ReadAccelerometer
+3. Test 2
+*/
 int main()
 {	
 	
@@ -109,20 +127,6 @@ int main()
 	printf("ESTIMATED STATES TEST 1\n");
 	printf("=======================\n");
 	Viterbi_C(obs, N_OBS_TAKEN, EstimatedStates, &hmm1);
-	/*
-	for (int j = 1; j < N_OBS_TAKEN; j++) {
-		//float viterbi_out[2*S_DEF];
-		int s = ViterbiUpdate_asm(states[j-1], states[j], obs[j], &hmm1);
-		
-		for (int k = 0; k < S_DEF; k++) {
-			viterbi_in[2*k] = viterbi_out[2*k], viterbi_in[2*k+1] = viterbi_out[2*k+1];
-		}
-		
-		for (int i = 0; i < S_DEF; i++) { 
-			printf("vit: %f\t psi: %f\n", states[j][2*i], states[j][2*i+1]);
-		}
-	}
-	*/
 
 	int nobs;
 	printf("OBSERVATIONS FROM ACCELEROMETER\n");
@@ -133,6 +137,13 @@ int main()
 	Viterbi_C(acceleratometer_observations, 9, EstimatedStates, &hmm1);
 	return 0;
 }
+
+/*!
+	\param Observations Observed states, used with emissions 
+	\param Nobs size of Observations
+	\param EstimatedStates output containing the EstimatedStates at all times
+	\param HMM hidden markov model used for data input
+*/
 int Viterbi_C(int* Observations, int Nobs, int* EstimatedStates, hmm_desc* hmm) {
 	for (int i =0; i < S_DEF; i++) {
 		states[0][2*i] = hmm->prior[i] * hmm->emission[i][Observations[0]];
@@ -141,10 +152,6 @@ int Viterbi_C(int* Observations, int Nobs, int* EstimatedStates, hmm_desc* hmm) 
 	}
 	for (int i = 1; i < Nobs+1; i++) {
 		ViterbiUpdate_asm(states[i-1], states[i], Observations[i], hmm);
-//		for (int j = 0; j < S_DEF; j++) { 
-//			printf("(%f, %f)\t", states[i][2*j], states[i][2*j+1]);
-//		}
-//		printf("\n");
 	}
 	for (int i = 1; i < Nobs+1; i++) {
 		float max = -1;
@@ -163,6 +170,10 @@ int Viterbi_C(int* Observations, int Nobs, int* EstimatedStates, hmm_desc* hmm) 
 	printf("\n");
 	return 0;
 }
+
+/*!
+	ViterbitUpdate_c 
+*/
 int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, hmm_desc *model) {
 	int max_index = -1;
 	float trans_p[S_DEF];
