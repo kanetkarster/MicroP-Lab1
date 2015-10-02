@@ -57,7 +57,7 @@ int ReadAccelerometer(float* data, int data_len, int* observation, int* nObs) {
 			if (ct[z] >= N[z] && z != last_entry) {
 				observation[*nObs] = z;
 				last_entry = z;
-				*nObs++;
+				(*nObs)++;
 				printf("%d\t", last_entry);
 			}
 		}
