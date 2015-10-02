@@ -4,4 +4,4 @@
 			
 vitpsi_out	DCD	1,2,3,4
 	
-	END
+		END
