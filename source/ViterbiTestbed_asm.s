@@ -1,9 +1,9 @@
 		AREA ViterbiTestbed, CODE, READONLY
 			EXPORT ViterbiTestbed_asm
 			IMPORT ViterbiUpdate_asm
+				
 		import 	vitpsi_in
 		import	vitpsi_out
-			
 		import	OBS
 		import	S_DEF
 		import	V_DEF
@@ -19,7 +19,7 @@ ViterbiTestbed_asm
 		LDR		R2, OBS
 		LDR		R3, =S_DEF
 		
-		B		ViterbiUpdate_asm
+		B			ViterbiUpdate_asm
 		BX		LR
 	
 		POP		{R4-R11}
