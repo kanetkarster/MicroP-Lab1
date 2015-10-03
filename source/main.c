@@ -65,28 +65,13 @@ int ReadAccelerometer(float* data, int data_len, int* observation, int* nObs) {
 1. Test 1
 2. ReadAccelerometer
 3. Test 2
+
+There were various test cases which we did in the demo. We simply commented out
+each test case instead of deleting them.
+
 */
 int main()
 {	
-	/*
-	hmm_desc hmm1 = {
-	S_DEF, 
-	V_DEF,
-	{
-		{0.09f, 0.9f, 0.01f, 0.0f},
-		{0.09f, 0.01f, 0.9f, 0.0f},
-		{0.09f, 0.45f, 0.01f, 0.45f},
-		{0.5f, 0.5f, 0.0f, 0.0f}
-	},
-	{
-		{1.0f, 0.0f, 0.0f},
-		{0.0f, 1.0f, 0.0f},
-		{0.0f, 0.0f, 1.0f},
-		{0.0f, 1.0f, 0.0f}
-	},
-		{0.25f, 0.25f, 0.25f, 0.25f}
-	};
-	*/
 	//This is the array of observations (same for all three hmm structs)
 	//int vitTestArray[20] = {2,1,1,2,1,2,1,0,1,2,1,1,2,1,2,1,1,2,1,0};
 	//The number of observations
@@ -94,9 +79,9 @@ int main()
 	//int obs[N_OBS_TAKEN] = {2,1,1,2,1,2,1,0,1,2,1,1,2,1,2,1,1,2,1,0};
 	//float viterbi_in[2*S_DEF];
 	int EstimatedStates[N_OBS_TAKEN];
-//	printf("ESTIMATED STATES TEST 1\n");
-//	printf("=======================\n");
-//	Viterbi_C(obs, N_OBS_TAKEN, EstimatedStates, &hmm3);
+	printf("ESTIMATED STATES TEST 1\n");
+	printf("=======================\n");
+	Viterbi_C(obs, N_OBS_TAKEN, EstimatedStates, &hmm2);
 //	
 /*
 	int accel_obs;
@@ -107,13 +92,13 @@ int main()
 	printf("=======================\n");
 	Viterbi_C(acceleratometer_observations, accel_obs, EstimatedStates, &hmm1);
 */
-  float viterbi_test1[2*S_DEF];
-	printf("Viterbi Update 1\n");
-	printf("================\n");
-	ViterbiUpdate_c(InputArray_1, viterbi_test1, Observation_1, &hmm1);
-	for (int i = 0; i < S_DEF; i++) {
-		printf("(%f, %f)\t", viterbi_test1[2*i], viterbi_test1[2*i+1]);
-	}
+//  float viterbi_test1[2*S_DEF];
+//	printf("Viterbi Update 1\n");
+//	printf("================\n");
+//	ViterbiUpdate_c(InputArray_1, viterbi_test1, Observation_1, &hmm1);
+//	for (int i = 0; i < S_DEF; i++) {
+//		printf("(%f, %f)\t", viterbi_test1[2*i], viterbi_test1[2*i+1]);
+//	}
 //	printf("\nViterbi Update 2\n");
 //	printf("================\n");
 //	ViterbiUpdate_c(InputArray_2, viterbi_test1, Observation_1, &hmm2);
@@ -136,25 +121,29 @@ int main()
 	\param HMM hidden markov model used for data input
 */
 int Viterbi_C(int* Observations, int Nobs, int* EstimatedStates, hmm_desc* hmm) {
+	// determine starting states
 	for (int i =0; i < hmm->S; i++) {
 		states[0][2*i] = hmm->prior[i] * hmm->emission[i][Observations[0]];
 		states[0][2*i+1] = 0;
 		//printf("%f = %f * %f\n", states[0][2*i], hmm->prior[i], hmm->emission[i][Observations[0]]);
 	}
+	// Determine states for each time
 	for (int i = 1; i < Nobs+1; i++) {
 		ViterbiUpdate_c(states[i-1], states[i], Observations[i], hmm);
 	}
+	// determine maximum  probability states for all observation
 	for (int i = 1; i < Nobs+1; i++) {
 		float max = -1;
 		for (int j = 0; j < S_DEF; j++) {
+			//printf("(%f, %f)\t", states[i][2*j], states[i][2*j+1]);
 			if (states[i][2*j] > max) {
 				max = states[i][2*j];
 				EstimatedStates[i-1] = (int) states[i][2*j+1];
-				//printf("(%f, %f)\t", states[i][2*j], states[i][2*j+1]);
 			}
 		}
 		//printf("\n");
 	}
+	// print maximum probability state for each observation
 	for (int i = 0; i < Nobs; i++) {
 		printf("%d\t", EstimatedStates[i]);
 	}
@@ -164,15 +153,23 @@ int Viterbi_C(int* Observations, int Nobs, int* EstimatedStates, hmm_desc* hmm) 
 
 /*!
 	ViterbitUpdate_c 
+	\param viterbi_in contains the previous state information, in the form (vit, psi)
+	\param viterbi_out returns the current state information, in the form (vit, psi)
+	\param obs observation at the current time
+	\param model Hidden Markov Model at current time
+	
+	Using the previous viterbi state information and their associated HMM, this function
+	determines the current viterbi state information
 */
 int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, hmm_desc *model) {
 	int max_index = -1;
 	float trans_p[S_DEF];
 	for (int i = 0; i < model->S; i++) {
-		
+		// find the transition probability for state i
 		for (int j = 0; j < model->S; j++) {
 			trans_p[j] = viterbi_in[2*j] * model->transition[j][i];
 		}
+		// find the maximum probability
 		float max = -1000;
 		for (int j = 0; j < model->S; j++) {
 			if (trans_p[j] > max) {
@@ -180,12 +177,14 @@ int ViterbiUpdate_c(float* viterbi_in, float* viterbi_out, int obs, hmm_desc *mo
 				max_index = j;
 			}
 		}
+		// update viterbi vector
 		viterbi_out[2*i] = max;						// assign vit (value)
 		//printf("%s: %3.3f\n", PRINT_STATE[i], max);
 		viterbi_out[2*i + 1] = max_index; // assign psi (index)
 		viterbi_out[2*i] = max * model->emission[i][obs];
 	}
 	
+	// normalize viterbi vector 
 	float sum = 0;
 	for (int i = 0; i < model->S; i++) {
 		sum += viterbi_out[2*i];
